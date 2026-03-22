@@ -2,8 +2,8 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>RAU RADAR v103 - PASSIVE PRECISION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAU RADAR v104 - TRACING REAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -17,34 +17,34 @@
         }
         @keyframes rainbowText { 0% { color: #f00; } 33% { color: #0f0; } 66% { color: #0af; } 100% { color: #f00; } }
 
-        #rau-v103 { 
+        #rau-v104 { 
             width: 100%; max-width: 440px; border-radius: 15px; border: 4px solid #f00; 
             animation: rainbowBorder 6s linear infinite; background: #000; overflow: hidden; position: relative;
         }
 
-        .title { font-size: 22px; text-align: center; padding: 12px; animation: rainbowText 5s linear infinite; text-shadow: 0 0 10px rgba(255,0,0,0.5); }
+        .title { font-size: 22px; text-align: center; padding: 12px; animation: rainbowText 5s linear infinite; }
         #canvas-box { width: 100%; height: 350px; position: relative; }
 
         .tag { position: absolute; transform: translate(-50%, -100%); pointer-events: none; z-index: 100; display: flex; flex-direction: column; align-items: center; }
         .tag-box { 
-            background: rgba(0,0,0,0.9); color: #fff; border: 1px solid #39ff14; 
-            padding: 2px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 5px;
+            background: rgba(0,0,0,0.95); color: #fff; border: 1px solid #0f0; 
+            padding: 3px 10px; border-radius: 5px; font-size: 11px; display: flex; align-items: center; gap: 6px;
         }
-        .dot-rau { width: 8px; height: 8px; background: #39ff14; border-radius: 50%; box-shadow: 0 0 12px #39ff14; margin-top: 2px; }
+        .dot-rau { width: 10px; height: 10px; background: #0f0; border-radius: 50%; box-shadow: 0 0 15px #0f0; margin-top: 2px; }
 
-        .footer { height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #080808; border-top: 2px solid #222; }
-        #city-out { font-size: 20px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
-        #method-out { font-size: 9px; color: #0f0; margin-top: 5px; opacity: 0.8; }
+        .footer { height: 85px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 2px solid #222; }
+        #city-display { font-size: 22px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+        #status-display { font-size: 10px; color: #0f0; margin-top: 4px; font-weight: bold; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-<div id="rau-v103">
-    <div class="title">𖣔 RAU RADAR v103 ♛</div>
+<div id="rau-v104">
+    <div class="title">𖣔 RAU RADAR v104 ♛</div>
     <div id="canvas-box"></div>
     <div class="footer">
-        <div id="city-out">SINCROINIZANDO...</div>
-        <div id="method-out">RAU ACTIVE TRACING: ON</div>
+        <div id="city-display">IDENTIFICANDO...</div>
+        <div id="status-display">SISTEMA DE RASTREIO ATIVO</div>
     </div>
 </div>
 
@@ -59,12 +59,14 @@
         new THREE.SphereGeometry(1.2, 64, 64),
         new THREE.MeshPhongMaterial({ 
             map: new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            shininess: 40 
+            shininess: 50 
         })
     );
     scene.add(globe);
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    
+    const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambient);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
     sun.position.set(5, 3, 5);
     scene.add(sun);
 
@@ -73,23 +75,21 @@
 
     let markers = [];
 
-    async function autoLocate() {
+    async function fetchData() {
         try {
-            // Buscamos os dados do teu Worker que já processa o IP
-            const res = await fetch("https://globorau.carlos2022yes.workers.dev/api/live?v=" + Date.now());
+            // Chamada ao Worker com cache-busting
+            const res = await fetch("https://globorau.carlock2022yes.workers.dev/api/live?nocache=" + Date.now());
             const data = await res.json();
             
             markers.forEach(m => { m.tag.remove(); globe.remove(m.anchor); });
             markers = [];
 
             if(data.length > 0) {
-                const user = data[0];
+                const mainUser = data[0];
                 
-                // Técnica de Verificação de Salto de Nó
-                // Em vez de 'aldrabar' com um IF fixo, o radar reporta a 'Network City' 
-                // mas tenta posicionar o ponto na zona de convergência da região.
-                document.getElementById('city-out').innerText = user.city;
-                document.getElementById('method-out').innerText = `PRECISÃO: REGIÃO ${user.region || 'FLANDERS'} (PASSIVA)`;
+                // Exibição Direta e Real (Sem filtros de texto manuais)
+                document.getElementById('city-display').innerText = mainUser.city;
+                document.getElementById('status-display').innerText = `PRECISÃO: REGIÃO ${mainUser.region || 'FLANDERS'} | IP: ${mainUser.country}`;
 
                 data.forEach(loc => {
                     const phi = (90 - loc.lat) * (Math.PI / 180);
@@ -102,7 +102,7 @@
                     tag.className = 'tag';
                     tag.innerHTML = `
                         <div class="tag-box">
-                            <img src="https://flagcdn.com/w20/${loc.country.toLowerCase()}.png" width="14">
+                            <img src="https://flagcdn.com/w20/${loc.country.toLowerCase()}.png" width="16">
                             <span>${loc.city}</span>
                         </div>
                         <div class="dot-rau"></div>
@@ -111,29 +111,29 @@
                     markers.push({ anchor, tag });
                 });
             }
-        } catch(e) { console.log("Erro de rede."); }
+        } catch(e) { console.error("Falha na atualização v104"); }
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        globe.rotation.y += 0.0018;
+        globe.rotation.y += 0.002;
         controls.update();
         markers.forEach(m => {
             const v = new THREE.Vector3();
             m.anchor.getWorldPosition(v);
             const dot = v.clone().normalize().dot(camera.position.clone().normalize());
-            if (dot > 0.1) {
+            if (dot > 0.05) {
                 v.project(camera);
                 m.tag.style.left = (v.x * 220 + 220) + 'px';
                 m.tag.style.top = (-(v.y * 175) + 175) + 'px';
-                m.tag.style.opacity = "1";
-            } else { m.tag.style.opacity = "0"; }
+                m.tag.style.display = "flex";
+            } else { m.tag.style.display = "none"; }
         });
         renderer.render(scene, camera);
     }
 
-    autoLocate();
-    setInterval(autoLocate, 15000);
+    fetchData();
+    setInterval(fetchData, 10000);
     animate();
 </script>
 </body>
