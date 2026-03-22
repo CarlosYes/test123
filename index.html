@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAU RADAR v104 - TRACING REAL</title>
+    <title>RAU RADAR v105 - FULL RECOVERY</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -17,34 +17,39 @@
         }
         @keyframes rainbowText { 0% { color: #f00; } 33% { color: #0f0; } 66% { color: #0af; } 100% { color: #f00; } }
 
-        #rau-v104 { 
+        #rau-v105 { 
             width: 100%; max-width: 440px; border-radius: 15px; border: 4px solid #f00; 
             animation: rainbowBorder 6s linear infinite; background: #000; overflow: hidden; position: relative;
         }
 
         .title { font-size: 22px; text-align: center; padding: 12px; animation: rainbowText 5s linear infinite; }
-        #canvas-box { width: 100%; height: 350px; position: relative; }
+        #canvas-box { width: 100%; height: 350px; position: relative; background: radial-gradient(circle, #050505 0%, #000 100%); }
 
         .tag { position: absolute; transform: translate(-50%, -100%); pointer-events: none; z-index: 100; display: flex; flex-direction: column; align-items: center; }
         .tag-box { 
-            background: rgba(0,0,0,0.95); color: #fff; border: 1px solid #0f0; 
-            padding: 3px 10px; border-radius: 5px; font-size: 11px; display: flex; align-items: center; gap: 6px;
+            background: rgba(0,0,0,0.9); color: #fff; border: 1px solid #0f0; 
+            padding: 3px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 5px;
+            box-shadow: 0 0 10px rgba(0,255,0,0.3);
         }
         .dot-rau { width: 10px; height: 10px; background: #0f0; border-radius: 50%; box-shadow: 0 0 15px #0f0; margin-top: 2px; }
 
         .footer { height: 85px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 2px solid #222; }
-        #city-display { font-size: 22px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
-        #status-display { font-size: 10px; color: #0f0; margin-top: 4px; font-weight: bold; letter-spacing: 1px; }
+        #city-display { font-size: 20px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
+        #status-display { font-size: 9px; color: #0f0; margin-top: 6px; font-weight: bold; opacity: 0.8; }
+        .f-flag { border-radius: 2px; border: 1px solid #444; }
     </style>
 </head>
 <body>
 
-<div id="rau-v104">
-    <div class="title">𖣔 RAU RADAR v104 ♛</div>
+<div id="rau-v105">
+    <div class="title">𖣔 RAU RADAR v105 ♛</div>
     <div id="canvas-box"></div>
     <div class="footer">
-        <div id="city-display">IDENTIFICANDO...</div>
-        <div id="status-display">SISTEMA DE RASTREIO ATIVO</div>
+        <div id="city-display">
+            <img id="f-flag" class="f-flag" src="https://flagcdn.com/w40/be.png" width="25">
+            <span id="f-name">CONECTANDO...</span>
+        </div>
+        <div id="status-display">SISTEMA DE RASTREIO GLOBAL ATIVO</div>
     </div>
 </div>
 
@@ -59,37 +64,39 @@
         new THREE.SphereGeometry(1.2, 64, 64),
         new THREE.MeshPhongMaterial({ 
             map: new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            shininess: 50 
+            shininess: 45 
         })
     );
     scene.add(globe);
     
-    const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambient);
-    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
     sun.position.set(5, 3, 5);
     scene.add(sun);
 
     camera.position.z = 3.6;
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
     let markers = [];
 
-    async function fetchData() {
+    async function updateRadar() {
         try {
-            // Chamada ao Worker com cache-busting
-            const res = await fetch("https://globorau.carlock2022yes.workers.dev/api/live?nocache=" + Date.now());
+            const res = await fetch("https://globorau.carlos2022yes.workers.dev/api/live?cache=" + Date.now());
             const data = await res.json();
             
-            markers.forEach(m => { m.tag.remove(); globe.remove(m.anchor); });
+            // Limpeza de segurança
+            markers.forEach(m => { if(m.tag) m.tag.remove(); globe.remove(m.anchor); });
             markers = [];
 
-            if(data.length > 0) {
-                const mainUser = data[0];
+            if(data && data.length > 0) {
+                const me = data[0];
                 
-                // Exibição Direta e Real (Sem filtros de texto manuais)
-                document.getElementById('city-display').innerText = mainUser.city;
-                document.getElementById('status-display').innerText = `PRECISÃO: REGIÃO ${mainUser.region || 'FLANDERS'} | IP: ${mainUser.country}`;
+                // Atualiza Rodapé (Bandeira + Nome)
+                document.getElementById('f-name').innerText = me.city || "DESCONHECIDO";
+                const cCode = me.country ? me.country.toLowerCase() : "be";
+                document.getElementById('f-flag').src = `https://flagcdn.com/w40/${cCode}.png`;
+                document.getElementById('status-display').innerText = `NETWORK: ${me.region || 'FLANDERS'} | TRACING ACTIVE`;
 
                 data.forEach(loc => {
                     const phi = (90 - loc.lat) * (Math.PI / 180);
@@ -100,9 +107,10 @@
 
                     const tag = document.createElement('div');
                     tag.className = 'tag';
+                    const countryTag = loc.country ? loc.country.toLowerCase() : "be";
                     tag.innerHTML = `
                         <div class="tag-box">
-                            <img src="https://flagcdn.com/w20/${loc.country.toLowerCase()}.png" width="16">
+                            <img src="https://flagcdn.com/w20/${countryTag}.png" width="14">
                             <span>${loc.city}</span>
                         </div>
                         <div class="dot-rau"></div>
@@ -111,29 +119,32 @@
                     markers.push({ anchor, tag });
                 });
             }
-        } catch(e) { console.error("Falha na atualização v104"); }
+        } catch(e) { 
+            document.getElementById('f-name').innerText = "ERRO DE SINCRONIA";
+        }
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        globe.rotation.y += 0.002;
+        globe.rotation.y += 0.0015;
         controls.update();
         markers.forEach(m => {
             const v = new THREE.Vector3();
             m.anchor.getWorldPosition(v);
             const dot = v.clone().normalize().dot(camera.position.clone().normalize());
-            if (dot > 0.05) {
+            if (dot > 0.1) {
                 v.project(camera);
                 m.tag.style.left = (v.x * 220 + 220) + 'px';
                 m.tag.style.top = (-(v.y * 175) + 175) + 'px';
                 m.tag.style.display = "flex";
-            } else { m.tag.style.display = "none"; }
+                m.tag.style.opacity = "1";
+            } else { m.tag.style.opacity = "0"; }
         });
         renderer.render(scene, camera);
     }
 
-    fetchData();
-    setInterval(fetchData, 10000);
+    updateRadar();
+    setInterval(updateRadar, 12000);
     animate();
 </script>
 </body>
