@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAU RADAR v105 - FULL RECOVERY</title>
+    <title>RAU RADAR v108 - TRUTH PROTOCOL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -15,41 +15,40 @@
             50% { border-color: #00ff00; box-shadow: 0 0 15px #00ff00; }
             100% { border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
         }
-        @keyframes rainbowText { 0% { color: #f00; } 33% { color: #0f0; } 66% { color: #0af; } 100% { color: #f00; } }
 
-        #rau-v105 { 
+        #rau-v108 { 
             width: 100%; max-width: 440px; border-radius: 15px; border: 4px solid #f00; 
             animation: rainbowBorder 6s linear infinite; background: #000; overflow: hidden; position: relative;
         }
 
-        .title { font-size: 22px; text-align: center; padding: 12px; animation: rainbowText 5s linear infinite; }
-        #canvas-box { width: 100%; height: 350px; position: relative; background: radial-gradient(circle, #050505 0%, #000 100%); }
+        .title { font-size: 22px; text-align: center; padding: 12px; color: #fff; text-shadow: 0 0 10px #f00; }
+        #canvas-box { width: 100%; height: 350px; position: relative; }
 
         .tag { position: absolute; transform: translate(-50%, -100%); pointer-events: none; z-index: 100; display: flex; flex-direction: column; align-items: center; }
         .tag-box { 
-            background: rgba(0,0,0,0.9); color: #fff; border: 1px solid #0f0; 
-            padding: 3px 8px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; gap: 5px;
-            box-shadow: 0 0 10px rgba(0,255,0,0.3);
+            background: rgba(0,0,0,0.95); color: #fff; border: 1px solid #39ff14; 
+            padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 5px;
         }
-        .dot-rau { width: 10px; height: 10px; background: #0f0; border-radius: 50%; box-shadow: 0 0 15px #0f0; margin-top: 2px; }
+        .dot-rau { width: 10px; height: 10px; background: #39ff14; border-radius: 50%; box-shadow: 0 0 12px #39ff14; margin-top: 2px; }
 
-        .footer { height: 85px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 2px solid #222; }
-        #city-display { font-size: 20px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
-        #status-display { font-size: 9px; color: #0f0; margin-top: 6px; font-weight: bold; opacity: 0.8; }
-        .f-flag { border-radius: 2px; border: 1px solid #444; }
+        .footer { height: 90px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 2px solid #222; }
+        #city-name { font-size: 18px; font-weight: 900; color: #fff; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        #debug-info { font-size: 8px; color: #f00; margin-top: 5px; text-align: center; line-height: 1.2; }
+        #accuracy-badge { font-size: 10px; color: #0f0; margin-top: 4px; border: 1px solid #0f0; padding: 1px 5px; border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<div id="rau-v105">
-    <div class="title">𖣔 RAU RADAR v105 ♛</div>
+<div id="rau-v108">
+    <div class="title">𖣔 RAU RADAR v108 ♛</div>
     <div id="canvas-box"></div>
     <div class="footer">
-        <div id="city-display">
-            <img id="f-flag" class="f-flag" src="https://flagcdn.com/w40/be.png" width="25">
-            <span id="f-name">CONECTANDO...</span>
+        <div id="city-name">
+            <img id="f-flag" src="https://flagcdn.com/w40/be.png" width="25">
+            <span id="f-city">ANALYSING...</span>
         </div>
-        <div id="status-display">SISTEMA DE RASTREIO GLOBAL ATIVO</div>
+        <div id="accuracy-badge">TRUTH ENGINE ACTIVE</div>
+        <div id="debug-info">IP SOURCE: DETECTING...</div>
     </div>
 </div>
 
@@ -64,39 +63,47 @@
         new THREE.SphereGeometry(1.2, 64, 64),
         new THREE.MeshPhongMaterial({ 
             map: new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            shininess: 45 
+            shininess: 40 
         })
     );
     scene.add(globe);
-    
-    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
     sun.position.set(5, 3, 5);
     scene.add(sun);
 
     camera.position.z = 3.6;
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
 
     let markers = [];
 
-    async function updateRadar() {
+    async function syncData() {
         try {
-            const res = await fetch("https://globorau.carlos2022yes.workers.dev/api/live?cache=" + Date.now());
+            const res = await fetch("https://globorau.carlos2022yes.workers.dev/api/live?t=" + Date.now());
             const data = await res.json();
             
-            // Limpeza de segurança
-            markers.forEach(m => { if(m.tag) m.tag.remove(); globe.remove(m.anchor); });
+            // Lógica de Detecção de Verdade (v108)
+            const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            markers.forEach(m => { m.tag.remove(); globe.remove(m.anchor); });
             markers = [];
 
             if(data && data.length > 0) {
-                const me = data[0];
+                const user = data[0];
                 
-                // Atualiza Rodapé (Bandeira + Nome)
-                document.getElementById('f-name').innerText = me.city || "DESCONHECIDO";
-                const cCode = me.country ? me.country.toLowerCase() : "be";
-                document.getElementById('f-flag').src = `https://flagcdn.com/w40/${cCode}.png`;
-                document.getElementById('status-display').innerText = `NETWORK: ${me.region || 'FLANDERS'} | TRACING ACTIVE`;
+                // Exibimos o que o IP diz, mas com o aviso de rede
+                document.getElementById('f-city').innerText = user.city || "UNKNOWN";
+                document.getElementById('f-flag').src = `https://flagcdn.com/w40/${user.country.toLowerCase()}.png`;
+                
+                // O rodapé agora expõe a verdade da rede vs IP
+                document.getElementById('debug-info').innerHTML = 
+                    `IP LOC: ${user.city} (${user.country})<br>DEVICE TZ: ${userTZ}`;
+
+                if(userTZ.includes("Zurich") || user.city === "ZURICH") {
+                    document.getElementById('accuracy-badge').innerText = "VPN/PROXY DETECTED";
+                    document.getElementById('accuracy-badge').style.color = "#f00";
+                    document.getElementById('accuracy-badge').style.borderColor = "#f00";
+                }
 
                 data.forEach(loc => {
                     const phi = (90 - loc.lat) * (Math.PI / 180);
@@ -107,10 +114,9 @@
 
                     const tag = document.createElement('div');
                     tag.className = 'tag';
-                    const countryTag = loc.country ? loc.country.toLowerCase() : "be";
                     tag.innerHTML = `
                         <div class="tag-box">
-                            <img src="https://flagcdn.com/w20/${countryTag}.png" width="14">
+                            <img src="https://flagcdn.com/w20/${loc.country.toLowerCase()}.png" width="14">
                             <span>${loc.city}</span>
                         </div>
                         <div class="dot-rau"></div>
@@ -119,32 +125,29 @@
                     markers.push({ anchor, tag });
                 });
             }
-        } catch(e) { 
-            document.getElementById('f-name').innerText = "ERRO DE SINCRONIA";
-        }
+        } catch(e) { console.error("Sync error"); }
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        globe.rotation.y += 0.0015;
+        globe.rotation.y += 0.0018;
         controls.update();
         markers.forEach(m => {
             const v = new THREE.Vector3();
             m.anchor.getWorldPosition(v);
-            const dot = v.clone().normalize().dot(camera.position.clone().normalize());
-            if (dot > 0.1) {
+            const dot = v.clone().normalize().dot(camera.position.normalize());
+            if (dot > 0.05) {
                 v.project(camera);
                 m.tag.style.left = (v.x * 220 + 220) + 'px';
                 m.tag.style.top = (-(v.y * 175) + 175) + 'px';
                 m.tag.style.display = "flex";
-                m.tag.style.opacity = "1";
-            } else { m.tag.style.opacity = "0"; }
+            } else { m.tag.style.display = "none"; }
         });
         renderer.render(scene, camera);
     }
 
-    updateRadar();
-    setInterval(updateRadar, 12000);
+    syncData();
+    setInterval(syncData, 10000);
     animate();
 </script>
 </body>
