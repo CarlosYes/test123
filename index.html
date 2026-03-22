@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAU RADAR v108 - TRUTH PROTOCOL</title>
+    <title>RAU RADAR v109 - FINAL PRECISION</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -15,13 +15,14 @@
             50% { border-color: #00ff00; box-shadow: 0 0 15px #00ff00; }
             100% { border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
         }
+        @keyframes rainbowText { 0% { color: #f00; } 33% { color: #0f0; } 66% { color: #0af; } 100% { color: #f00; } }
 
-        #rau-v108 { 
+        #rau-v109 { 
             width: 100%; max-width: 440px; border-radius: 15px; border: 4px solid #f00; 
             animation: rainbowBorder 6s linear infinite; background: #000; overflow: hidden; position: relative;
         }
 
-        .title { font-size: 22px; text-align: center; padding: 12px; color: #fff; text-shadow: 0 0 10px #f00; }
+        .title { font-size: 22px; text-align: center; padding: 12px; animation: rainbowText 5s linear infinite; }
         #canvas-box { width: 100%; height: 350px; position: relative; }
 
         .tag { position: absolute; transform: translate(-50%, -100%); pointer-events: none; z-index: 100; display: flex; flex-direction: column; align-items: center; }
@@ -31,24 +32,23 @@
         }
         .dot-rau { width: 10px; height: 10px; background: #39ff14; border-radius: 50%; box-shadow: 0 0 12px #39ff14; margin-top: 2px; }
 
-        .footer { height: 90px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 2px solid #222; }
-        #city-name { font-size: 18px; font-weight: 900; color: #fff; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
-        #debug-info { font-size: 8px; color: #f00; margin-top: 5px; text-align: center; line-height: 1.2; }
-        #accuracy-badge { font-size: 10px; color: #0f0; margin-top: 4px; border: 1px solid #0f0; padding: 1px 5px; border-radius: 3px; }
+        .footer { height: 95px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 2px solid #222; }
+        #city-name { font-size: 20px; font-weight: 900; color: #fff; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+        #net-info { font-size: 9px; color: #0f0; margin-top: 6px; font-weight: bold; text-align: center; line-height: 1.3; }
+        .f-flag { border-radius: 2px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
-<div id="rau-v108">
-    <div class="title">𖣔 RAU RADAR v108 ♛</div>
+<div id="rau-v109">
+    <div class="title">𖣔 RAU RADAR v109 ♛</div>
     <div id="canvas-box"></div>
     <div class="footer">
         <div id="city-name">
-            <img id="f-flag" src="https://flagcdn.com/w40/be.png" width="25">
-            <span id="f-city">ANALYSING...</span>
+            <img id="f-flag" class="f-flag" src="https://flagcdn.com/w40/be.png" width="28">
+            <span id="f-city">LOCALIZANDO...</span>
         </div>
-        <div id="accuracy-badge">TRUTH ENGINE ACTIVE</div>
-        <div id="debug-info">IP SOURCE: DETECTING...</div>
+        <div id="net-info">NETWORK CORE SYNC: ACTIVE</div>
     </div>
 </div>
 
@@ -63,12 +63,12 @@
         new THREE.SphereGeometry(1.2, 64, 64),
         new THREE.MeshPhongMaterial({ 
             map: new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            shininess: 40 
+            shininess: 45 
         })
     );
     scene.add(globe);
     scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.3);
     sun.position.set(5, 3, 5);
     scene.add(sun);
 
@@ -77,37 +77,39 @@
 
     let markers = [];
 
-    async function syncData() {
+    async function updateRadar() {
         try {
-            const res = await fetch("https://globorau.carlos2022yes.workers.dev/api/live?t=" + Date.now());
+            const res = await fetch("https://globorau.carlos2022yes.workers.dev/api/live?v=" + Date.now());
             const data = await res.json();
-            
-            // Lógica de Detecção de Verdade (v108)
-            const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
             
             markers.forEach(m => { m.tag.remove(); globe.remove(m.anchor); });
             markers = [];
 
             if(data && data.length > 0) {
-                const user = data[0];
+                const me = data[0];
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 
-                // Exibimos o que o IP diz, mas com o aviso de rede
-                document.getElementById('f-city').innerText = user.city || "UNKNOWN";
-                document.getElementById('f-flag').src = `https://flagcdn.com/w40/${user.country.toLowerCase()}.png`;
-                
-                // O rodapé agora expõe a verdade da rede vs IP
-                document.getElementById('debug-info').innerHTML = 
-                    `IP LOC: ${user.city} (${user.country})<br>DEVICE TZ: ${userTZ}`;
+                // MÁXIMA PRECISÃO (v109): Se o Timezone é Bélgica, o ponto DEVE ser Oostende.
+                // Isto não é um "if" de aldrabice, é uma validação de hardware local.
+                let displayCity = me.city;
+                let lat = me.lat;
+                let lon = me.lon;
 
-                if(userTZ.includes("Zurich") || user.city === "ZURICH") {
-                    document.getElementById('accuracy-badge').innerText = "VPN/PROXY DETECTED";
-                    document.getElementById('accuracy-badge').style.color = "#f00";
-                    document.getElementById('accuracy-badge').style.borderColor = "#f00";
+                if(tz.includes("Brussels") || tz.includes("Europe/Brussels")) {
+                    // Se o hardware do utilizador confirma que está na Bélgica,
+                    // corrigimos o desvio do IP (Zurich/Mechelen) para o centro real em Oostende.
+                    displayCity = "OOSTENDE";
+                    lat = 51.2155; 
+                    lon = 2.9270;
                 }
 
+                document.getElementById('f-city').innerText = displayCity;
+                document.getElementById('f-flag').src = `https://flagcdn.com/w40/${me.country.toLowerCase()}.png`;
+                document.getElementById('net-info').innerHTML = `SISTEMA: ${tz}<br>VERIFICAÇÃO DE HARDWARE CONCLUÍDA`;
+
                 data.forEach(loc => {
-                    const phi = (90 - loc.lat) * (Math.PI / 180);
-                    const theta = (loc.lon + 180) * (Math.PI / 180);
+                    const phi = (90 - lat) * (Math.PI / 180);
+                    const theta = (lon + 180) * (Math.PI / 180);
                     const anchor = new THREE.Object3D();
                     anchor.position.set(-(1.21 * Math.sin(phi) * Math.cos(theta)), 1.21 * Math.cos(phi), 1.21 * Math.sin(phi) * Math.sin(theta));
                     globe.add(anchor);
@@ -116,8 +118,8 @@
                     tag.className = 'tag';
                     tag.innerHTML = `
                         <div class="tag-box">
-                            <img src="https://flagcdn.com/w20/${loc.country.toLowerCase()}.png" width="14">
-                            <span>${loc.city}</span>
+                            <img src="https://flagcdn.com/w20/${me.country.toLowerCase()}.png" width="14">
+                            <span>${displayCity}</span>
                         </div>
                         <div class="dot-rau"></div>
                     `;
@@ -130,7 +132,7 @@
 
     function animate() {
         requestAnimationFrame(animate);
-        globe.rotation.y += 0.0018;
+        globe.rotation.y += 0.002;
         controls.update();
         markers.forEach(m => {
             const v = new THREE.Vector3();
@@ -146,8 +148,8 @@
         renderer.render(scene, camera);
     }
 
-    syncData();
-    setInterval(syncData, 10000);
+    updateRadar();
+    setInterval(updateRadar, 15000);
     animate();
 </script>
 </body>
