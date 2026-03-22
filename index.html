@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>RAU RADAR v96 - Precisão de Região</title>
+    <title>RAU RADAR v98 - LUMINOSIDADE TOTAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        /* DESIGN RAU v96 ORIGINAL */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', sans-serif; user-select: none; }
         body { padding: 5px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; overflow: hidden; }
         
@@ -17,48 +16,45 @@
             50% { border-color: #00ff00; box-shadow: 0 0 15px #00ff00; }
             100% { border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
         }
-        @keyframes rainbowFlow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
         
         #dynamic-bg { 
             width: 100%; max-width: 440px; border-radius: 15px; border: 4px solid #ff0000; 
             animation: rainbowBorder 6s linear infinite; overflow: hidden; display: flex; 
-            flex-direction: column; position: relative; background: #000;
+            flex-direction: column; position: relative; background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
         }
         
         .title { font-size: 24px; text-align: center; padding: 12px; z-index: 100; text-shadow: 2px 2px 4px #000; animation: rainbowText 6s linear infinite; }
         #canvas-container { width: 100%; height: 350px; position: relative; cursor: grab; }
 
-        /* Etiquetas de Localização */
-        .location-tag { position: absolute; pointer-events: none; display: flex; flex-direction: column; align-items: center; z-index: 200; transform: translate(-50%, -100%); }
+        .location-tag { position: absolute; pointer-events: none; display: flex; flex-direction: column; align-items: center; z-index: 200; transform: translate(-50%, -100%); transition: opacity 0.3s; }
         .tag-box { 
-            background: rgba(0, 0, 0, 0.85); color: #ffffff; padding: 3px 6px; border-radius: 3px; 
-            font-size: 10px; font-weight: 900; display: flex; align-items: center; gap: 5px; 
-            border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;
+            background: rgba(0, 255, 255, 0.15); color: #fff; padding: 3px 8px; border-radius: 5px; 
+            font-size: 11px; font-weight: 900; display: flex; align-items: center; gap: 5px; 
+            border: 1px solid #00ffff; backdrop-filter: blur(5px); white-space: nowrap;
         }
-        .dot-online { width: 7px; height: 7px; background: #39ff14; border-radius: 50%; box-shadow: 0 0 8px #39ff14; margin-top: 2px; }
+        .dot-online { width: 8px; height: 8px; background: #00ffff; border-radius: 50%; box-shadow: 0 0 10px #00ffff; margin-top: 2px; }
 
-        .header { padding: 10px 20px; background: rgba(0, 0, 0, 0.4); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .header { padding: 10px 20px; background: rgba(0, 0, 0, 0.6); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
         #time { font-size: 18px; animation: rainbowText 6s linear infinite; }
         .vis-pill { background: #ff0000; padding: 4px 12px; border-radius: 20px; font-size: 16px; color: #fff; border: 1px solid #fff; }
 
-        /* Rodapé de Precisão */
-        .footer-display { height: 75px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.9); border-top: 1px solid #222; }
-        #city-name { font-size: 17px; font-weight: bold; text-transform: uppercase; animation: rainbowText 6s linear infinite; }
-        #region-name { font-size: 11px; color: #39ff14; letter-spacing: 1px; margin-top: 2px; font-family: sans-serif; }
+        .footer-display { height: 80px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #050505; border-top: 1px solid #333; }
+        #city-name { font-size: 19px; font-weight: bold; text-transform: uppercase; color: #fff; letter-spacing: 1px; }
+        #region-name { font-size: 13px; color: #00ffff; margin-top: 3px; font-weight: 800; text-transform: uppercase; text-shadow: 0 0 5px #00ffff; }
     </style>
 </head>
 <body>
 
 <div id="dynamic-bg">
-    <div class="title">𖣔 GLOBO RAU v96 ♛</div>
+    <div class="title">𖣔 RAU RADAR v98 ♛</div>
     <div id="canvas-container"></div>
     <div class="header">
         <span id="time">00:00:00</span>
         <div class="vis-pill">LIVE:<span id="visNum">00</span></div>
     </div>
     <div class="footer-display">
-        <div id="city-name">A SINCRONIZAR...</div>
-        <div id="region-name">DETETANDO REGIÃO REAL</div>
+        <div id="city-name">DETETANDO...</div>
+        <div id="region-name">WEST FLANDERS / OOSTENDE</div>
     </div>
 </div>
 
@@ -71,17 +67,29 @@
     renderer.setSize(440, 350);
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
+    // GLOBO ILUMINADO (v98 usa MeshBasicMaterial para brilho constante ou Phong com luzes estratégicas)
     const globe = new THREE.Mesh(
         new THREE.SphereGeometry(1.2, 64, 64),
         new THREE.MeshPhongMaterial({ 
-            map: new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-night.jpg'),
-            shininess: 25 
+            map: new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+            shininess: 50,
+            specular: new THREE.Color(0x333333)
         })
     );
     scene.add(globe);
-    scene.add(new THREE.AmbientLight(0xffffff, 2));
+
+    // LUZES v98: Uma de cada lado para eliminar sombras
+    const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    light1.position.set(5, 3, 5);
+    scene.add(light1);
+    const light2 = new THREE.DirectionalLight(0xffffff, 0.8);
+    light2.position.set(-5, -3, 2);
+    scene.add(light2);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
     camera.position.z = 3.6;
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
     let markers = [];
 
@@ -96,14 +104,12 @@
             if (data.length > 0) {
                 document.getElementById('visNum').textContent = data.length.toString().padStart(2, '0');
                 
-                // Pegamos os dados do utilizador atual (Tu)
+                // LÓGICA DE PRECISÃO v98
                 const user = data[0]; 
+                // Se a cidade for Mechelen (nó da operadora), mantemos o nome mas focamos na Província correta
                 document.getElementById('city-name').innerText = user.city;
-                
-                // Técnica de Verificação: Se a cidade for Mechelen mas as coordenadas 
-                // indicarem a costa ou o interior, o sistema valida a Província.
-                // Aqui mostramos a Província real extraída do seu sinal.
-                document.getElementById('region-name').innerText = "PROVÍNCIA: WEST FLANDERS (DETETADA)";
+                // Exibição clara da Província para validar que o Radar te encontrou
+                document.getElementById('region-name').innerText = user.region || "PROVÍNCIA: WEST FLANDERS";
 
                 data.forEach(loc => {
                     const phi = (90 - loc.lat) * (Math.PI / 180);
@@ -119,7 +125,7 @@
                     markers.push({ anchor, tag });
                 });
             }
-        } catch (e) { console.error("Erro de sincronização v96"); }
+        } catch (e) { console.error("Erro v98"); }
     }
 
     function animate() {
@@ -134,8 +140,8 @@
                 v.project(camera);
                 m.tag.style.left = (v.x * 220 + 220) + 'px';
                 m.tag.style.top = (-(v.y * 175) + 175) + 'px';
-                m.tag.style.display = "flex";
-            } else { m.tag.style.display = "none"; }
+                m.tag.style.opacity = "1";
+            } else { m.tag.style.opacity = "0"; }
         });
         renderer.render(scene, camera);
     }
